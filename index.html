@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook Messenger Auto Sender - Professional Dashboard</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #1877f2;
+            --secondary-color: #42a5f5;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+            --dark-bg: #121212;
+            --darker-bg: #0a0a0a;
+            --card-bg: #1e1e1e;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border-color: #333333;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(18, 18, 18, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+            font-weight: 600;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 10px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(24, 119, 242, 0.25);
+            color: var(--text-primary);
+        }
+
+        .form-control::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(24, 119, 242, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger-color), #e53935);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color), #66bb6a);
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .task-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, var(--success-color), #66bb6a);
+        }
+
+        .status-stopped {
+            background: linear-gradient(135deg, var(--danger-color), #e53935);
+        }
+
+        .status-starting {
+            background: linear-gradient(135deg, var(--warning-color), #ffb74d);
+        }
+
+        .status-error {
+            background: linear-gradient(135deg, #ff5722, #ff7043);
+        }
+
+        .progress {
+            height: 8px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--success-color), #66bb6a);
+        }
+
+        .stats-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .stats-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .form-text {
+            color: #e0e0e0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+            font-weight: 500;
+        }
+
+        .text-muted {
+            color: #d0d0d0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .navbar-text {
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .task-card .text-muted {
+            color: #c0c0c0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .task-card h6 {
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .task-card .fw-bold {
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
+
+        .alert {
+            color: #ffffff;
+        }
+
+        .alert {
+            border: none;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            color: #ffffff;
+        }
+
+        .alert-success {
+            background: rgba(76, 175, 80, 0.3);
+            color: #c8e6c9;
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+
+        .alert-danger {
+            background: rgba(244, 67, 54, 0.3);
+            color: #ffcdd2;
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+
+        .alert-info {
+            background: rgba(33, 150, 243, 0.3);
+            color: #ffffff;
+            border: 1px solid rgba(33, 150, 243, 0.5);
+        }
+
+        .form-text {
+            color: #e0e0e0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+            font-weight: 500;
+        }
+
+        .text-muted {
+            color: #d0d0d0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .navbar-text {
+            color: #ffffff !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .task-card .text-muted {
+            color: #c0c0c0 !important;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .task-card h6 {
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        }
+
+        .task-card .fw-bold {
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
+
+        .time-display {
+            font-size: 0.85rem;
+            color: #e0e0e0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .time-badge {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .loading-spinner {
+            display: none;
+        }
+
+        .loading-spinner.show {
+            display: inline-block;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .floating-action {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding: 15px;
+            }
+
+            .card {
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">
+                <i class="fab fa-facebook-messenger me-2"></i>
+                FB Messenger Auto Sender
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user me-1"></i>
+                    Session: <span id="sessionId">Loading...</span>
+                </span>
+                <span class="navbar-text">
+                    <i class="fas fa-circle text-success me-1"></i>
+                    Server Online
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <div class="row">
+            <!-- Control Panel -->
+            <div class="col-lg-6">
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-rocket me-2"></i>
+                            Launch New Campaign
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="senderForm">
+                            <div class="mb-3">
+                                <label for="cookie" class="form-label">
+                                    <i class="fas fa-cookie-bite me-2"></i>
+                                    Facebook Cookie
+                                </label>
+                                <textarea class="form-control" id="cookie" rows="3"
+                                    placeholder="Paste your Facebook cookie here..." required></textarea>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Copy cookies from your browser's developer tools
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="threadId" class="form-label">
+                                    <i class="fas fa-comments me-2"></i>
+                                    Conversation Thread ID
+                                </label>
+                                <input type="text" class="form-control" id="threadId"
+                                    placeholder="Enter conversation UID..." required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="hattersName" class="form-label">
+                                    <i class="fas fa-user-tag me-2"></i>
+                                    Hatter's Name (Optional)
+                                </label>
+                                <input type="text" class="form-control" id="hattersName"
+                                    placeholder="Enter name prefix...">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="messageFile" class="form-label">
+                                    <i class="fas fa-file-alt me-2"></i>
+                                    Messages File (.txt)
+                                </label>
+                                <input type="file" class="form-control" id="messageFile" accept=".txt" required>
+                                <div class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Upload a .txt file with one message per line
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="delay" class="form-label">
+                                    <i class="fas fa-clock me-2"></i>
+                                    Delay Between Messages (seconds)
+                                </label>
+                                <input type="number" class="form-control" id="delay"
+                                    placeholder="Enter delay in seconds..." min="1" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 pulse">
+                                <span class="loading-spinner spinner-border spinner-border-sm me-2"
+                                    role="status"></span>
+                                <i class="fas fa-play me-2"></i>
+                                Start Campaign
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Panel -->
+            <div class="col-lg-6">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="stats-card fade-in">
+                            <div class="stats-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <h4 id="activeTasks">0</h4>
+                            <p class="mb-0 text-muted">Active Tasks</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="stats-card fade-in">
+                            <div class="stats-icon">
+                                <i class="fas fa-paper-plane"></i>
+                            </div>
+                            <h4 id="totalMessages">0</h4>
+                            <p class="mb-0 text-muted">Total Messages</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>
+                            Quick Actions
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-danger w-100 mb-2" onclick="stopAllTasks()">
+                            <i class="fas fa-stop me-2"></i>
+                            Stop All Tasks
+                        </button>
+                        <button class="btn btn-success w-100" onclick="refreshDashboard()">
+                            <i class="fas fa-sync-alt me-2"></i>
+                            Refresh Dashboard
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Task Dashboard -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card fade-in">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Live Task Dashboard
+                        </h5>
+                        <span class="badge bg-primary" id="taskCount">0 Tasks</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="taskDashboard">
+                            <div class="text-center py-5" style="color: #ffffff;">
+                                <i class="fas fa-inbox fa-3x mb-3" style="color: #cccccc;"></i>
+                                <h5 style="color: #ffffff;">No Active Tasks</h5>
+                                <p style="color: #d0d0d0;">Start a new campaign to see real-time updates here</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="floating-action">
+        <button class="btn btn-primary rounded-circle" style="width: 60px; height: 60px;" onclick="scrollToTop()">
+            <i class="fas fa-arrow-up"></i>
+        </button>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Socket.IO connection
+        const socket = io();
+
+        // Global variables
+        let activeTasks = {};
+        let totalMessagesSent = 0;
+        let currentSessionId = null;
+
+        // DOM elements
+        const senderForm = document.getElementById('senderForm');
+        const taskDashboard = document.getElementById('taskDashboard');
+        const alertContainer = document.getElementById('alertContainer');
+        const loadingSpinner = document.querySelector('.loading-spinner');
+        const sessionIdElement = document.getElementById('sessionId');
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function () {
+            getSessionInfo();
+            refreshDashboard();
+            updateStats();
+        });
+
+        // Time formatting functions
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const startTime = new Date(dateString);
+            const diffMs = now - startTime;
+
+            const seconds = Math.floor(diffMs / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+
+            const remainingHours = hours % 24;
+            const remainingMinutes = minutes % 60;
+            const remainingSeconds = seconds % 60;
+
+            let result = [];
+
+            if (days > 0) result.push(`${days}d`);
+            if (remainingHours > 0) result.push(`${remainingHours}h`);
+            if (remainingMinutes > 0) result.push(`${remainingMinutes}m`);
+            if (remainingSeconds > 0 && days === 0) result.push(`${remainingSeconds}s`);
+
+            return result.length > 0 ? result.join(' ') : '0s';
+        }
+
+        function formatIndianTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-IN', {
+                timeZone: 'Asia/Kolkata',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            });
+        }
+
+        // Get session information
+        async function getSessionInfo() {
+            try {
+                const response = await fetch('/session-info');
+                const result = await response.json();
+                currentSessionId = result.sessionId;
+                sessionIdElement.textContent = result.sessionId.substring(0, 8) + '...';
+
+                // Request session tasks from server
+                socket.emit('getSessionTasks');
+            } catch (error) {
+                console.error('Error getting session info:', error);
+                sessionIdElement.textContent = 'Error';
+            }
+        }
+
+        // Form submission
+        senderForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData();
+            formData.append('cookie', document.getElementById('cookie').value);
+            formData.append('threadId', document.getElementById('threadId').value);
+            formData.append('hattersName', document.getElementById('hattersName').value);
+            formData.append('delay', document.getElementById('delay').value);
+            formData.append('messageFile', document.getElementById('messageFile').files[0]);
+
+            try {
+                showLoading(true);
+
+                const response = await fetch('/start-task', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', `Campaign started successfully in your session! Task ID: ${result.taskId}`);
+                    senderForm.reset();
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error starting campaign: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        // Socket event listeners
+        socket.on('sessionInfo', function (data) {
+            currentSessionId = data.sessionId;
+            sessionIdElement.textContent = data.sessionId.substring(0, 8) + '...';
+        });
+
+        socket.on('taskUpdate', function (data) {
+            // Only process tasks that belong to current session
+            if (data.sessionId === currentSessionId) {
+                updateTaskInDashboard(data);
+                updateStats();
+            }
+        });
+
+        // Update task in dashboard
+        function updateTaskInDashboard(data) {
+            // Ensure task belongs to current session
+            if (data.sessionId !== currentSessionId) {
+                return;
+            }
+
+            activeTasks[data.taskId] = data;
+
+            let taskElement = document.getElementById('task-' + data.taskId);
+
+            if (!taskElement) {
+                taskElement = createTaskElement(data);
+                if (taskDashboard.innerHTML.includes('No Active Tasks')) {
+                    taskDashboard.innerHTML = '';
+                }
+                taskDashboard.appendChild(taskElement);
+            } else {
+                updateTaskElement(taskElement, data);
+            }
+        }
+
+        // Create task element
+        function createTaskElement(data) {
+            const taskDiv = document.createElement('div');
+            taskDiv.id = 'task-' + data.taskId;
+            taskDiv.className = 'task-card fade-in';
+            taskDiv.innerHTML = getTaskHTML(data);
+            return taskDiv;
+        }
+
+        // Update task element
+        function updateTaskElement(element, data) {
+            element.innerHTML = getTaskHTML(data);
+        }
+
+        // Get task HTML
+        function getTaskHTML(data) {
+            const progress = data.totalMessages > 0 ? (data.totalSent / data.totalMessages) * 100 : 0;
+            const statusClass = getStatusClass(data.status);
+
+            const startTime = formatIndianTime(data.startTime);
+            const startTimeAgo = formatTimeAgo(data.startTime);
+
+            let stopTimeHtml = '';
+            if (data.stopTime) {
+                const stopTime = formatIndianTime(data.stopTime);
+                stopTimeHtml = `
+                    <div class="col-md-12 mt-2">
+                        <small class="text-muted">
+                            <i class="fas fa-stop-circle me-1"></i>
+                            Stopped: ${stopTime}
+                        </small>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h6 class="mb-1">
+                            <i class="fas fa-comments me-2"></i>
+                            Thread: ${data.threadId}
+                        </h6>
+                        <span class="status-badge ${statusClass}">
+                            ${getStatusIcon(data.status)} ${data.status.toUpperCase()}
+                        </span>
+                        <small class="d-block text-muted mt-1">
+                            <i class="fas fa-fingerprint me-1"></i>
+                            Session: ${data.sessionId.substring(0, 8)}...
+                        </small>
+                    </div>
+                    <div class="text-end">
+                        <button class="btn btn-danger btn-sm mb-2" onclick="stopTask('${data.taskId}')">
+                            <i class="fas fa-stop me-1"></i>
+                            Stop
+                        </button>
+                        <div class="time-badge">
+                            <i class="fas fa-clock me-1"></i>
+                            Running: ${startTimeAgo}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <small class="text-muted">Messages Sent</small>
+                        <div class="fw-bold">${data.totalSent} / ${data.totalMessages}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Current Index</small>
+                        <div class="fw-bold">${data.currentIndex + 1}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted">Delay</small>
+                        <div class="fw-bold">${data.delay}s</div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <small class="text-muted">
+                            <i class="fas fa-play-circle me-1"></i>
+                            Started: ${startTime}
+                        </small>
+                    </div>
+                    ${stopTimeHtml}
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">Progress</small>
+                        <small class="text-muted">${Math.round(progress)}%</small>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar" style="width: ${progress}%"></div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mb-0">
+                    <small><i class="fas fa-info-circle me-1"></i> ${data.message}</small>
+                </div>
+            `;
+        }
+
+        // Get status class
+        function getStatusClass(status) {
+            switch (status) {
+                case 'active': return 'status-active';
+                case 'stopped': return 'status-stopped';
+                case 'starting': return 'status-starting';
+                case 'error': return 'status-error';
+                default: return 'status-stopped';
+            }
+        }
+
+        // Get status icon
+        function getStatusIcon(status) {
+            switch (status) {
+                case 'active': return '<i class="fas fa-play"></i>';
+                case 'stopped': return '<i class="fas fa-stop"></i>';
+                case 'starting': return '<i class="fas fa-spinner fa-spin"></i>';
+                case 'error': return '<i class="fas fa-exclamation-triangle"></i>';
+                default: return '<i class="fas fa-question"></i>';
+            }
+        }
+
+        // Stop task
+        async function stopTask(taskId) {
+            try {
+                const response = await fetch('/stop-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ taskId })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showAlert('success', 'Task stopped successfully');
+                } else {
+                    showAlert('danger', result.message);
+                }
+            } catch (error) {
+                showAlert('danger', 'Error stopping task: ' + error.message);
+            }
+        }
+
+        // Stop all tasks (only for current session)
+        async function stopAllTasks() {
+            const sessionTasks = Object.keys(activeTasks).filter(taskId =>
+                activeTasks[taskId].sessionId === currentSessionId
+            );
+
+            if (sessionTasks.length === 0) {
+                showAlert('info', 'No active tasks in your session to stop');
+                return;
+            }
+
+            for (const taskId of sessionTasks) {
+                await stopTask(taskId);
+            }
+
+            showAlert('success', `Stopped ${sessionTasks.length} task(s) from your session`);
+        }
+
+        // Refresh dashboard
+        async function refreshDashboard() {
+            try {
+                const response = await fetch('/active-tasks');
+                const result = await response.json();
+
+                if (result.success) {
+                    // Clear current tasks and reload session-specific tasks
+                    activeTasks = {};
+
+                    // Update session info
+                    if (result.sessionId) {
+                        currentSessionId = result.sessionId;
+                        sessionIdElement.textContent = result.sessionId.substring(0, 8) + '...';
+                    }
+
+                    // Update stats
+                    updateStats();
+
+                    // Request fresh task data
+                    socket.emit('getSessionTasks');
+                }
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            }
+        }
+
+        // Update statistics (only for current session)
+        function updateStats() {
+            const sessionTasks = Object.keys(activeTasks).filter(taskId =>
+                activeTasks[taskId].sessionId === currentSessionId
+            );
+
+            const activeTaskCount = sessionTasks.filter(taskId =>
+                activeTasks[taskId].status === 'active' || activeTasks[taskId].status === 'starting'
+            ).length;
+
+            totalMessagesSent = sessionTasks.reduce((sum, taskId) =>
+                sum + (activeTasks[taskId].totalSent || 0), 0
+            );
+
+            document.getElementById('activeTasks').textContent = activeTaskCount;
+            document.getElementById('totalMessages').textContent = totalMessagesSent;
+            document.getElementById('taskCount').textContent = `${sessionTasks.length} Tasks`;
+        }
+
+        // Show loading spinner
+        function showLoading(show) {
+            if (show) {
+                loadingSpinner.classList.add('show');
+            } else {
+                loadingSpinner.classList.remove('show');
+            }
+        }
+
+        // Show alert
+        function showAlert(type, message) {
+            const alertId = 'alert-' + Date.now();
+            const alertHTML = `
+                <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle'} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" onclick="closeAlert('${alertId}')"></button>
+                </div>
+            `;
+
+            alertContainer.innerHTML = alertHTML + alertContainer.innerHTML;
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                closeAlert(alertId);
+            }, 5000);
+        }
+
+        // Close alert
+        function closeAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            if (alert) {
+                alert.remove();
+            }
+        }
+
+        // Scroll to top
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Clean up stopped/error tasks periodically (only for current session)
+        setInterval(() => {
+            Object.keys(activeTasks).forEach(taskId => {
+                const task = activeTasks[taskId];
+                // Only process tasks from current session
+                if (task.sessionId === currentSessionId &&
+                    (task.status === 'stopped' || task.status === 'error')) {
+
+                    const taskElement = document.getElementById('task-' + taskId);
+                    if (taskElement) {
+                        setTimeout(() => {
+                            taskElement.remove();
+                            delete activeTasks[taskId];
+                            updateStats();
+
+                            // Show empty state if no session tasks
+                            const sessionTasks = Object.keys(activeTasks).filter(id =>
+                                activeTasks[id].sessionId === currentSessionId
+                            );
+
+                            if (sessionTasks.length === 0) {
+                                taskDashboard.innerHTML = `
+                                    <div class="text-center py-5" style="color: #ffffff;">
+                                        <i class="fas fa-inbox fa-3x mb-3" style="color: #cccccc;"></i>
+                                        <h5 style="color: #ffffff;">No Active Tasks in Your Session</h5>
+                                        <p style="color: #d0d0d0;">Start a new campaign to see real-time updates here</p>
+                                        <small style="color: #b0b0b0;">Session: ${currentSessionId ? currentSessionId.substring(0, 8) + '...' : 'Loading...'}</small>
+                                    </div>
+                                `;
+                            }
+                        }, 10000); // Remove after 10 seconds
+                    }
+                }
+            });
+        }, 30000); // Check every 30 seconds
+
+        // Handle page visibility change
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                // Page became visible, refresh session tasks
+                setTimeout(() => {
+                    socket.emit('getSessionTasks');
+                }, 1000);
+            }
+        });
+
+        // Update running times every second
+        setInterval(() => {
+            Object.keys(activeTasks).forEach(taskId => {
+                const task = activeTasks[taskId];
+                if (task.sessionId === currentSessionId && (task.status === 'active' || task.status === 'starting')) {
+                    const taskElement = document.getElementById('task-' + taskId);
+                    if (taskElement) {
+                        const runningTimeElement = taskElement.querySelector('.time-badge');
+                        if (runningTimeElement && task.startTime) {
+                            const timeAgo = formatTimeAgo(task.startTime);
+                            runningTimeElement.innerHTML = `<i class="fas fa-clock me-1"></i>Running: ${timeAgo}`;
+                        }
+                    }
+                }
+            });
+        }, 1000); // Update every second
+    </script>
+</body>
+
+</html>
